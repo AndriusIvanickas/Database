@@ -3,8 +3,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -18,10 +16,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import com.sun.javafx.scene.control.skin.resources.ControlResources;
 import javafx.util.Callback;
-
-import javax.xml.crypto.Data;
 
 public class TableMain extends Application {
 
@@ -42,7 +37,6 @@ public class TableMain extends Application {
         tableview = new TableView();
         buildData();
 
-
         Button button = new Button("Prideti");
         button.setOnAction(e -> handleButtonAction());
 
@@ -55,9 +49,7 @@ public class TableMain extends Application {
 
         Scene scene = new Scene(root, 800, 400);
 
-
         tableview.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
 
         primaryStage.setTitle("Duomenu baze");
         primaryStage.setScene(scene);
@@ -80,8 +72,6 @@ public class TableMain extends Application {
                 String columnName = rs.getString(2);
                 System.out.println("Column Name: " + columnName);
                 columnNames.add(columnName);
-
-                // Create TableColumn outside the loop
             }
 
             // Create TableColumn for each column name
@@ -105,17 +95,35 @@ public class TableMain extends Application {
             // Print data
             String SQL1 = "select distinct LINE_ID from DuomenuBaze where zur_id=1";
             ResultSet rs1 = c.createStatement().executeQuery(SQL1);
+            ObservableList<String> row = null;
             while (rs1.next()) {
                 String SQL2 = "select ID, DUOM from DuomenuBaze where ZUR_ID=1 and LINE_ID=" + rs1.getString(1);
                 ResultSet rs2 = c.createStatement().executeQuery(SQL2);
 
-                ObservableList<String> row = FXCollections.observableArrayList();
+                // Create a new ObservableList for each row
+                row = FXCollections.observableArrayList();
+
+                int count = 0; // Counter to track the number of data values added to the current row
+
                 while (rs2.next()) {
                     String dataValue = rs2.getString(2);
                     System.out.println("Data Value: " + dataValue);
+                    // Add each data value to the row ObservableList
                     row.add(dataValue);
-                }
+                    count++;
 
+                    // Check if 4 data values have been added, then start a new row
+                    if (count == 4) {
+                        System.out.println("Row added " + row);
+                        data.add(row);
+                        row = FXCollections.observableArrayList(); // Create a new row
+                        count = 0; // Reset the counter
+                    }
+                }
+            }
+
+            // Add the last row if it has fewer than 4 data values
+            if (!row.isEmpty()) {
                 System.out.println("Row added " + row);
                 data.add(row);
             }
@@ -125,56 +133,56 @@ public class TableMain extends Application {
             e.printStackTrace();
             System.out.println("Error on Building Data");
         }
+
     }
 
 
     private void handleButtonAction() {
-        // Create a MultiTextFieldInputDialog
         MultiTextFieldInputDialog dialog = new MultiTextFieldInputDialog();
         dialog.setHeaderText("Ideti duomenis");
 
-        // Show the dialog and capture the result.
         Optional<String[]> result = dialog.showAndWait();
 
         result.ifPresent(userInput -> {
-            // Process the input values
             try {
-                // Establish a connection to the database
                 Connection connection = DriverManager.getConnection("jdbc:sqlite:test.db");
 
-                // Retrieve the last ID from the database
-                String lastIdQuery = "SELECT MAX(ID) ,MAX(ZUR_DET_ID) FROM DuomenuBaze";
+                String lastIdQuery = "SELECT MAX(ID), MAX(ZUR_DET_ID) FROM DuomenuBaze";
                 ResultSet lastIdResult = connection.createStatement().executeQuery(lastIdQuery);
                 int lastId = lastIdResult.getInt(1);
                 int lastZurDetId = lastIdResult.getInt(2);
 
-                // Increment the last ID to generate a new ID
                 int newId = lastId + 1;
                 int newZurDetId = lastZurDetId + 1;
 
-                // Insert individual rows for each field
                 for (int i = 0; i < userInput.length; i++) {
                     String fieldValue = userInput[i].trim();
                     String insertQuery = "INSERT INTO DuomenuBaze (ID, ZUR_ID, ZUR_DET_ID, LINE_ID, DUOM) VALUES (?, 1, ?, 1, ?)";
                     try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
-                        preparedStatement.setInt(1, newId++);
-                        preparedStatement.setInt(2, newZurDetId++);
+                        preparedStatement.setInt(1, newId);
+                        preparedStatement.setInt(2, newZurDetId);
                         preparedStatement.setString(3, fieldValue);
                         preparedStatement.executeUpdate();
                     }
+
+                    newId++;
+                    newZurDetId++;
                 }
 
-                // Close the connection
                 connection.close();
 
-                // Update the TableView with the updated data from the database
+                // Clear existing columns and items in the TableView
+
+                tableview.getColumns().clear();
+                tableview.getItems().clear();
+                // Rebuild the data and set it to the TableView
                 buildData();
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println("Error on Building Data");
             }
+
         });
     }
 
 }
-
