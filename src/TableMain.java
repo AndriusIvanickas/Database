@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,9 @@ public class TableMain extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+
     ArrayList setA = new ArrayList();
+
     @Override
     public void start(Stage primaryStage) {
         BorderPane root = new BorderPane();
@@ -51,8 +54,6 @@ public class TableMain extends Application {
         root.setCenter(vBox);
 
         Scene scene = new Scene(root, 800, 400);
-
-
 
 
         tableview.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -127,40 +128,53 @@ public class TableMain extends Application {
     }
 
 
-
-
-
-
     private void handleButtonAction() {
-        // Create a TextAreaInputDialog
-        TextAreaInputDialog dialog = new TextAreaInputDialog();
-        dialog.setHeaderText("Ideti duomenis, atsikrti kableliais:");
-        dialog.setGraphic(null);
+        // Create a MultiTextFieldInputDialog
+        MultiTextFieldInputDialog dialog = new MultiTextFieldInputDialog();
+        dialog.setHeaderText("Ideti duomenis");
 
         // Show the dialog and capture the result.
-        Optional<String> result = dialog.showAndWait();
+        Optional<String[]> result = dialog.showAndWait();
 
         result.ifPresent(userInput -> {
+            // Process the input values
+            try {
+                // Establish a connection to the database
+                Connection connection = DriverManager.getConnection("jdbc:sqlite:test.db");
 
-            String[] values = userInput.split(",");
+                // Retrieve the last ID from the database
+                String lastIdQuery = "SELECT MAX(ID) ,MAX(ZUR_DET_ID) FROM DuomenuBaze";
+                ResultSet lastIdResult = connection.createStatement().executeQuery(lastIdQuery);
+                int lastId = lastIdResult.getInt(1);
+                int lastZurDetId = lastIdResult.getInt(2);
 
-            if (values.length == 5) {
-                String ID = values[0].trim();
-                String ZUR_ID = values[1].trim();
-                String ZUR_DET_ID = values[2].trim();
-                String Line_ID = values[3].trim();
-                String DUOM = values[4].trim();
+                // Increment the last ID to generate a new ID
+                int newId = lastId + 1;
+                int newZurDetId = lastZurDetId + 1;
 
-                // Create a new Zurnalas object with the obtained values
-                Zurnalas newZurnalas = new Zurnalas(ID, ZUR_ID, ZUR_DET_ID, Line_ID, DUOM);
+                // Insert individual rows for each field
+                for (int i = 0; i < userInput.length; i++) {
+                    String fieldValue = userInput[i].trim();
+                    String insertQuery = "INSERT INTO DuomenuBaze (ID, ZUR_ID, ZUR_DET_ID, LINE_ID, DUOM) VALUES (?, 1, ?, 1, ?)";
+                    try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+                        preparedStatement.setInt(1, newId++);
+                        preparedStatement.setInt(2, newZurDetId++);
+                        preparedStatement.setString(3, fieldValue);
+                        preparedStatement.executeUpdate();
+                    }
+                }
 
-                // Use the Zurnalas object to add a new line to the database
-                AddLine addLine = new AddLine();
-                addLine.addLineToDatabase(newZurnalas.getID(), newZurnalas.getZUR_ID(), newZurnalas.getZUR_DET_ID(), newZurnalas.getLine_ID(), newZurnalas.getDUOM());
+                // Close the connection
+                connection.close();
 
                 // Update the TableView with the updated data from the database
                 buildData();
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error on Building Data");
             }
         });
     }
+
 }
+
