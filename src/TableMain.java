@@ -27,8 +27,8 @@ public class TableMain extends Application {
         launch(args);
     }
 
-    ArrayList setA = new ArrayList();
 
+    SQLite db = new SQLite("jdbc:sqlite:test.db");
     @Override
     public void start(Stage primaryStage) {
         BorderPane root = new BorderPane();
@@ -57,84 +57,48 @@ public class TableMain extends Application {
     }
 
     public void buildData() {
-        Connection c;
         data = FXCollections.observableArrayList();
+        tableview.getColumns().clear();  // Clear existing columns if necessary
+
         try {
-            c = DriverManager.getConnection("jdbc:sqlite:test.db");
-
-            // Create a list to store column names
-            List<String> columnNames = new ArrayList<>();
-
-            // Print column names
-            String SQL = "select ID, PAV from ZUR_DET where zur_id=1";
-            ResultSet rs = c.createStatement().executeQuery(SQL);
-            while (rs.next()) {
-                String columnName = rs.getString(2);
-                System.out.println("Column Name: " + columnName);
-                columnNames.add(columnName);
-            }
-
-            // Create TableColumn for each column name
+            // Fetch column names and create columns in the TableView
+            List<String> columnNames = ZUR_DET.getColumnNames(db, 1);
             for (int i = 0; i < columnNames.size(); i++) {
                 final int j = i;
-                TableColumn col = new TableColumn(columnNames.get(j));
-                col.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ObservableList, String>, ObservableValue<String>>() {
-                    public ObservableValue<String> call(TableColumn.CellDataFeatures<ObservableList, String> param) {
-                        List<String> rowValues = param.getValue();
-                        if (j >= 0 && j < rowValues.size()) {
-                            return new SimpleStringProperty(rowValues.get(j).toString());
-                        } else {
-                            return new SimpleStringProperty("");
-                        }
+                TableColumn<ObservableList<String>, String> col = new TableColumn<>(columnNames.get(i));
+                col.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ObservableList<String>, String>, ObservableValue<String>>() {
+                    @Override
+                    public ObservableValue<String> call(TableColumn.CellDataFeatures<ObservableList<String>, String> param) {
+                        return new SimpleStringProperty(param.getValue().get(j));
                     }
                 });
-
                 tableview.getColumns().add(col);
             }
 
-            // Print data
-            String SQL1 = "select distinct LINE_ID from DuomenuBaze where zur_id=1";
-            ResultSet rs1 = c.createStatement().executeQuery(SQL1);
-            ObservableList<String> row = null;
-            while (rs1.next()) {
-                String SQL2 = "select ID, DUOM from DuomenuBaze where ZUR_ID=1 and LINE_ID=" + rs1.getString(1);
-                ResultSet rs2 = c.createStatement().executeQuery(SQL2);
+            // Assume DUOM_DET.getDUOM_DETList() has been correctly implemented
+            List<DUOM_DET> duomDetList = DUOM_DET.getDUOM_DETList(db, 1);
 
-                // Create a new ObservableList for each row
-                row = FXCollections.observableArrayList();
-
-                int count = 0; // Counter to track the number of data values added to the current row
-
-                while (rs2.next()) {
-                    String dataValue = rs2.getString(2);
-                    System.out.println("Data Value: " + dataValue);
-                    // Add each data value to the row ObservableList
-                    row.add(dataValue);
-                    count++;
-
-                    // Check if 4 data values have been added, then start a new row
-                    if (count == 4) {
-                        System.out.println("Row added " + row);
-                        data.add(row);
-                        row = FXCollections.observableArrayList(); // Create a new row
-                        count = 0; // Reset the counter
+            // Process the data and populate the TableView
+            for (int i = 0; i < duomDetList.size(); i += 4) {
+                ObservableList<String> row = FXCollections.observableArrayList();
+                for (int j = 0; j < 4; j++) {
+                    if ((i + j) < duomDetList.size()) {
+                        row.add(duomDetList.get(i + j).getDuom());
+                    } else {
+                        row.add("");  // Fill remaining cells with empty strings if needed
                     }
                 }
-            }
-
-            // Add the last row if it has fewer than 4 data values
-            if (!row.isEmpty()) {
-                System.out.println("Row added " + row);
                 data.add(row);
             }
 
+            // Set the items for the TableView
             tableview.setItems(data);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Error on Building Data");
         }
-
     }
+
 
 
     private void handleButtonAction() {
@@ -147,7 +111,7 @@ public class TableMain extends Application {
             try {
                 Connection connection = DriverManager.getConnection("jdbc:sqlite:test.db");
 
-                String lastIdQuery = "SELECT MAX(ID), MAX(ZUR_DET_ID) FROM DuomenuBaze";
+                String lastIdQuery = "SELECT MAX(ID), MAX(ZUR_DET_ID) FROM DUOM_DET";
                 ResultSet lastIdResult = connection.createStatement().executeQuery(lastIdQuery);
                 int lastId = lastIdResult.getInt(1);
                 int lastZurDetId = lastIdResult.getInt(2);
@@ -157,7 +121,7 @@ public class TableMain extends Application {
 
                 for (int i = 0; i < userInput.length; i++) {
                     String fieldValue = userInput[i].trim();
-                    String insertQuery = "INSERT INTO DuomenuBaze (ID, ZUR_ID, ZUR_DET_ID, LINE_ID, DUOM) VALUES (?, 1, ?, 1, ?)";
+                    String insertQuery = "INSERT INTO DUOM_DET (ID, ZUR_ID, ZUR_DET_ID, LINE_ID, DUOM) VALUES (?, 1, ?, 1, ?)";
                     try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
                         preparedStatement.setInt(1, newId);
                         preparedStatement.setInt(2, newZurDetId);

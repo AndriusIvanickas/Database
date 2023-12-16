@@ -1,34 +1,29 @@
-import java.util.Scanner;
+import java.util.List;
 
 public class Main {
+
     public static void main(String[] args) {
-        System.out.println("Irasykite is eiles, naudojant kablelius: Pavadinimas, Kaina, tt... ");
 
-        // Read user input
-        Scanner scanner = new Scanner(System.in);
-        String userInput = scanner.nextLine();
+        SQLite db = new SQLite("jdbc:sqlite:test.db");
 
-        // Split user input by commas
-        String[] data = userInput.split(",");
 
-        // Check if the input has the correct number of fields
-        if (data.length == 5) {
-            String ID = data[0].trim();
-            String ZUR_ID = data[1].trim();
-            String ZUR_DET_ID = data[2].trim();
-            String Line_ID = data[3].trim();
-            String DUOM = data[4].trim();
+        int zurId = 1;
+        List<ZUR_DET> zurDet = ZUR_DET.getZURDETList(db, zurId);
 
-            // Create an instance of AddLine and add the line to the database
-            AddLine addLine = new AddLine();
-            addLine.addLineToDatabase(ID, ZUR_ID, ZUR_DET_ID,Line_ID, DUOM);
-
-            System.out.println("Line added to the database.");
-        } else {
-            System.out.println("Invalid input format. Please provide four fields separated by commas.");
+        // Printing out the records
+        for (ZUR_DET record : zurDet) {
+            System.out.println("ID: " + record.getId() + ", ZUR_ID: " + record.getZurId() +
+                    ", PAV: " + record.getPav() + ", TIP_ID: " + record.getTipId() +
+                    ", LEN: " + record.getLen() + ", MIN: " + record.getMin() +
+                    ", MAX: " + record.getMax());
         }
 
-        // Close the scanner to prevent resource leak
-        scanner.close();
+        List<DUOM_DET> duomDet = DUOM_DET.getDUOM_DETList(db, zurId);
+
+        for(DUOM_DET record : duomDet) {
+            System.out.println("ID: " + record.getId() + ", ZUR_ID: " + record.getZurId() +
+                    ", ZUR_DET_ID: " + record.getZurDetId() + ", LINE_ID: " + record.getLineId() +
+                    ", DUOM: " + record.getDuom());
+        }
     }
 }

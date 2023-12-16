@@ -1,3 +1,5 @@
+package SQLiteCreate;
+
 import java.sql.*;
 
 public class SQLiteAdd {
