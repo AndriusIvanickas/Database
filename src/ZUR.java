@@ -33,7 +33,7 @@ public class ZUR {
     }
 
     // Database operations
-    public static List<ZUR> getAllZURRecords(SQLite db) {
+    public static List<ZUR> getAllZUR(SQLite db) {
         List<ZUR> zurList = new ArrayList<>();
         String sql = "SELECT ID, PAV FROM ZUR";
         try (Connection conn = db.connect();
