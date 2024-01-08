@@ -1,6 +1,7 @@
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import org.w3c.dom.Text;
 
 import java.util.Optional;
 
@@ -20,6 +21,7 @@ public class MultiTextFieldInputDialog extends Dialog<String[]> {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
+
         TextField dataField = new TextField();
         dataField.setPromptText("Data");
         TextField pavadinimasField = new TextField();
@@ -29,14 +31,15 @@ public class MultiTextFieldInputDialog extends Dialog<String[]> {
         TextField deziuField = new TextField();
         deziuField.setPromptText("Deziu Skaicius");
 
-        grid.add(new Label("Data:"), 0, 0);
-        grid.add(dataField, 1, 0);
-        grid.add(new Label("Pavadinimas:"), 0, 1);
-        grid.add(pavadinimasField, 1, 1);
-        grid.add(new Label("Svarstykliu Parodymai:"), 0, 2);
-        grid.add(svarstykliuField, 1, 2);
-        grid.add(new Label("Deziu Skaicius:"), 0, 3);
-        grid.add(deziuField, 1, 3);
+
+        grid.add(new Label("Data:"), 0, 1);
+        grid.add(dataField, 1, 1);
+        grid.add(new Label("Pavadinimas:"), 0, 2);
+        grid.add(pavadinimasField, 1, 2);
+        grid.add(new Label("Svarstykliu Parodymai:"), 0, 3);
+        grid.add(svarstykliuField, 1, 3);
+        grid.add(new Label("Deziu Skaicius:"), 0, 4);
+        grid.add(deziuField, 1, 4);
 
         getDialogPane().setContent(grid);
 
@@ -44,6 +47,7 @@ public class MultiTextFieldInputDialog extends Dialog<String[]> {
         setResultConverter(dialogButton -> {
             if (dialogButton == okButtonType) {
                 return new String[]{
+
                         dataField.getText(),
                         pavadinimasField.getText(),
                         svarstykliuField.getText(),

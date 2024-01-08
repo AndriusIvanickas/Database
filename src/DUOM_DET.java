@@ -63,11 +63,11 @@ public class DUOM_DET {
 
     public static List<DUOM_DET> getDUOM_DETList(SQLite db, int zurId) {
         List<DUOM_DET> duomDetList = new ArrayList<>();
-        String sql = "SELECT ID, ZUR_ID, ZUR_DET_ID,Line_ID, DUOM FROM DUOM_DET WHERE ZUR_ID = 1";
+        String sql = "SELECT ID, ZUR_ID, ZUR_DET_ID,Line_ID, DUOM FROM DUOM_DET WHERE ZUR_ID = ?";
 
         try (Connection conn = db.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+            pstmt.setInt(1, zurId);
 
             ResultSet rs = pstmt.executeQuery();
 

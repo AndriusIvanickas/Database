@@ -85,11 +85,11 @@ public class ZUR_DET {
     // Static method to get ZUR_DET records from the database
     public static List<ZUR_DET> getZURDETList(SQLite db, int zurId) {
         List<ZUR_DET> zurDetList = new ArrayList<>();
-        String sql = "SELECT ID, ZUR_ID, PAV, TIP_ID, LEN, MIN, MAX FROM ZUR_DET WHERE ZUR_ID = 1";
+        String sql = "SELECT ID, ZUR_ID, PAV, TIP_ID, LEN, MIN, MAX FROM ZUR_DET WHERE ZUR_ID = ?";
 
         try (Connection conn = db.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+            pstmt.setInt(1, zurId);
 
             ResultSet rs = pstmt.executeQuery();
 
@@ -112,11 +112,11 @@ public class ZUR_DET {
     }
     public static List<String> getColumnNames(SQLite db, int zurId) {
         List<String> columnNames = new ArrayList<>();
-        String sql = "SELECT ID, PAV FROM ZUR_DET WHERE ZUR_ID = 1";
+        String sql = "SELECT ID, PAV FROM ZUR_DET WHERE ZUR_ID =  ?";
 
         try (Connection conn = db.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+            pstmt.setInt(1, zurId);
 
             ResultSet rs = pstmt.executeQuery();
 
