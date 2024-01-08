@@ -139,26 +139,15 @@ public class TableMain extends Application {
         Optional<String[]> result = dialog.showAndWait();
         result.ifPresent(userInput -> {
             try (Connection connection = DriverManager.getConnection("jdbc:sqlite:test.db")) {
-                String lastIdQuery = "SELECT MAX(ID), MAX(ZUR_DET_ID), MAX(LINE_ID) FROM DUOM_DET WHERE ZUR_ID = ?";
-                try (PreparedStatement lastIdStatement = connection.prepareStatement(lastIdQuery)) {
-                    lastIdStatement.setInt(1, currentZurId);
-                    ResultSet lastIdResult = lastIdStatement.executeQuery();
-                    int lastId = lastIdResult.getInt(1);
-                    int lastZurDetId = lastIdResult.getInt(2);
-                    int lastLineId = lastIdResult.getInt(3);
+
+                String maxIdQuery = "SELECT MAX(ID), MAX(ZUR_DET_ID), MAX(LINE_ID) FROM DUOM_DET";
+                try (PreparedStatement maxIdStatement = connection.prepareStatement(maxIdQuery)) {
+                    ResultSet maxIdResult = maxIdStatement.executeQuery();
 
 
-                    if (currentZurId == 1 && (lastZurDetId == 104 || lastZurDetId == 108)) {
-                        lastZurDetId = 100;
-                    } else if (currentZurId == 2 && lastZurDetId < 104) {
-                        lastZurDetId = 104;
-                    }
-
-
-                    int newLineId = lastLineId + 1;
-                    int temp2 = lastZurDetId;
-                    int newId = lastId + 1;
-                    int newZurDetId = temp2 + 1;
+                    int newId = maxIdResult.getInt(1) + 1;
+                    int newZurDetId = maxIdResult.getInt(2)+1;
+                    int newLineId = maxIdResult.getInt(3);
 
                     for (int i = 0; i < userInput.length; i++) {
                         String fieldValue = userInput[i].trim();
@@ -166,14 +155,31 @@ public class TableMain extends Application {
                         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
                             preparedStatement.setInt(1, newId);
                             preparedStatement.setInt(2, currentZurId);
+
+
+
+                            if(currentZurId == 1 && newZurDetId >104){
+                                newZurDetId = 101;
+                            }
+                            if(currentZurId == 2 && newZurDetId >108){
+                                newZurDetId = 105;
+                            }
+
+
+
+                            int newLineId1 = newLineId + 1;
+                            int temp2 = newZurDetId;
+
+
+
                             preparedStatement.setInt(3, newZurDetId);
-                            preparedStatement.setInt(4, newLineId);
+                            preparedStatement.setInt(4, newLineId1);
                             preparedStatement.setString(5, fieldValue);
                             preparedStatement.executeUpdate();
-                        }
 
-                        newId++;
-                        newZurDetId++;
+                            newId++;
+                            newZurDetId++;
+                        }
                     }
 
                     connection.close();
@@ -181,7 +187,7 @@ public class TableMain extends Application {
                     tableview.getItems().clear();
                     buildData(currentZurId);
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("Error on Building Data");
             }
